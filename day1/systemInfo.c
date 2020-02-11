@@ -52,31 +52,37 @@ int main(int argc, char const *argv[])
             break;
         
         case 2:
-            system("uname -r");
+            system("echo Kernel Version \\:  && cat /proc/sys/kernel/osrelease");
             break;
 
         case 3:
+            system("cat /proc/uptime");
             break;
 
         case 4:
+            system("echo Average Load on System last 15 mins && awk '{print $3}' /proc/loadavg");
             break;
 
         case 5:
+            system("awk '/Mem[TF]/ {print $0}' /proc/meminfo");
             break;
 
         case 6:
             break;
 
         case 7:
+            system("cat /proc/swaps");
             break;
 
         case 8:
             break;
 
         case 9:
+            system("awk '/ctxt/ {print \"Total number of context switches = \" $2}' /proc/stat");
             break;
 
         case 10:
+            system("awk '/intr/ {print \"Total number of Interrupts = \" $2}' /proc/stat");
             break;
 
         case 11:
