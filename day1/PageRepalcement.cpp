@@ -11,7 +11,7 @@ struct node
     node *next, *prev;
 };
 
-class ll
+class lru
 {
 private:
     node *head,*tail;
@@ -20,7 +20,7 @@ private:
 public:
 	unordered_map<int, node*> nodelist;
 
-    ll()
+    lru()
     {
         head = tail = NULL;
         curr_frames = 0;
@@ -138,17 +138,20 @@ public:
 	}
 };
 
+
+
+
 int main()
 {
 	
 
 	cout<<"Hello"<<endl;
-	ll a;
+	lru LL;
     while(1)
     {
     	int x;cin>>x;
-    	a.LRU(x);
-    	a.print_list();
+    	LL.LRU(x);
+    	LL.print_list();
     }
 
     return 0;
