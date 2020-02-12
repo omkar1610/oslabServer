@@ -1,3 +1,5 @@
+//Reference : http://dhruvbird.com/lfu.pdf
+
 #include <iostream>
 #include <unordered_map>
 using namespace std;
@@ -28,10 +30,11 @@ class lfu
 {
 private:
     freq_node *freq_head;
-    int tot_frames, curr_frames, page_faults;
+    int tot_frames, curr_frames;
     unordered_map<int, page_node*> page_to_node;
 
 public:
+    int page_faults;
     lfu(int tot)
     {
         freq_head = NULL;
@@ -62,11 +65,12 @@ public:
             printf("Empty\n");
             return;
         }
-        printf("curr = %d\n", curr_frames);
+        // printf("curr = %d\n", curr_frames);
+
         freq_node *tmp = freq_head;
         while(tmp != NULL)
         {
-            printf("%d = ", tmp->freq);
+            // p    rintf("%d = ", tmp->freq);
 
             page_node *n = tmp->head;
             while(n != NULL)
@@ -75,28 +79,28 @@ public:
                 n = n->next;
             }
 
-            printf(" Reverse : ");
-            n = tmp->tail;
-            while(n != NULL)
-            {
-                printf("%d(%d) ", n->page, n->parent->freq);
-                n = n->prev;
-            }
+            // printf(" Reverse : ");
+            // n = tmp->tail;
+            // while(n != NULL)
+            // {
+            //     printf("%d(%d) ", n->page, n->parent->freq);
+            //     n = n->prev;
+            // }
 
             printf("\n");
             tmp = tmp->next;
         }
         printf("\n");
-        cout<<page_faults<<endl;
     }
 
 
-    void remove_lfu() //Assumes at least 2 pages must be present before replacement
+    void remove_lfu() //conveniently Assumes at least 2 pages must be present before replacement
     //          So that we dont have to check for single freq node deletion
     {
         freq_node *tmp = freq_head;
         page_node *page = tmp->tail; //This is to be deleted
-        cout<<"Removing"<<page->page<<endl;
+        
+        // cout<<"Removing"<<page->page<<endl;
 
         if(tmp->head == tmp->tail) // Single Node, Then remove freq node
         {
@@ -104,6 +108,7 @@ public:
             curr_frames--;
             free(tmp->tail);
             //delete freq node npw
+           
             //Since at least 2, so can't be last freq node with 1 page
             if(freq_head == tmp)// first freq_node
             {
@@ -132,26 +137,28 @@ public:
 
     void add_page_node(int x)
     {
-//====================================================================================================
-//<NOT IN MEMORY
-//====================================================================================================
+        //====================================================================================================
+        //<NOT IN MEMORY
+        //====================================================================================================
 
         if(check_key(x) != 1)    // Not in the memory
         {
-            if(curr_frames>=tot_frames) //Increase freq
+            if(curr_frames>=tot_frames) //Remove appropriate page before inserting
             {
                 remove_lfu();
             }
+            //Get a node for new node
             page_node *page = new page_node;
             page->page = x;
             page->next = page->prev = NULL;
 
+            //Store to hashMAp
             page_to_node[x] = page;
             curr_frames++;
             page_faults++;
-//====================================================================================================
-//EMPTY FREQ LIST > ADD 1ST PAGE
-//====================================================================================================
+            //====================================================================================================
+            //EMPTY FREQ LIST => ADD 1ST PAGE
+            //====================================================================================================
             if(freq_head == NULL) // 1st page to be added
             {
                 freq_node *tmp = new freq_node;
@@ -164,12 +171,11 @@ public:
 
                 freq_head = tmp;
             }
-//====================================================================================================
-// NO 1 FREQ NODE > CREATE AND ADD
-//====================================================================================================
+            //====================================================================================================
+            // NO FREQ NODE of FREQ = 1  => CREATE FREQ NODE AND ADD PAGE
+            //====================================================================================================
 
-            else if(freq_head->freq != 1) // No 1 freq page is present
-                                        //  Create 1 freq and add page to it
+            else if(freq_head->freq != 1) // No 1 freq page is present, Create 1 freq and add page to it
             {
                 freq_node *tmp = new freq_node;
                 tmp->freq = 1;
@@ -183,12 +189,11 @@ public:
 
                 freq_head = tmp;
             }
-//====================================================================================================
-// 1 FREQ NODE > APPEND NEW PAGE
-//====================================================================================================
+            //====================================================================================================
+            // FREQ 1 FREQ NODE Present => APPEND THE NEW PAGE
+            //====================================================================================================
 
-            else // 1 freq nodelist is there and non empty 
-                //  so add to the existing nodelist
+            else // 1 freq nodelist is there and non empty,  so add to the existing nodelist
             {
                 freq_node *par = freq_head;
                 
@@ -198,24 +203,22 @@ public:
                 par->head = page;
             }
         }
-//====================================================================================================
-// < IN MEMORY
-//====================================================================================================
+        //====================================================================================================
+        // Page IN MEMORY
+        //====================================================================================================
 
         else // Present in the memory
         {
-            // cout<<"In memory"<<endl;
+            // Get details of the PAGE node
+
             page_node *page = get_node(x);
             freq_node *par = page->parent;
             int page_freq = par->freq;
-
-
             
             {
-//====================================================================================================
-// LAST FREQ NODE > ONE NODE > FREQ++
-//====================================================================================================
-
+                //====================================================================================================
+                // TAIL FREQ NODE > ONE NODE > FREQ++(No need to create a new Freq Node)
+                //====================================================================================================
                 if(par->next == NULL) // last freq node
                 {
                     // cout<<"here";
@@ -224,9 +227,9 @@ public:
                     {
                         par->freq++;
                     }
-//====================================================================================================
-// NO FREQ +1 > REMOVE CREATE ADD 1ST PAGE
-//====================================================================================================
+                    //====================================================================================================
+                    // TAIL FREQ NODE > NO FREQ +1 Node > REMOVE from parent, CREATE freq + 1 ADD MOVE the 1ST PAGE
+                    //====================================================================================================
 
                     else    
                     {
@@ -271,13 +274,12 @@ public:
 
                     }
                 }
-//====================================================================================================
-// NON LAST. FREQ+1 AVAILABLE > REMOVE APPEND
-//====================================================================================================
+                //====================================================================================================
+                // NON LAST. FREQ+1 AVAILABLE > REMOVE and APPEND
+                //====================================================================================================
 
                 else // Non-last node in freq list 
                 {
-                     // cout<<"Here"<<endl;
                     if(par->next->freq == par->freq + 1)// freq + 1 is available
                         // Just remove from par and add par->next
                     {
@@ -291,8 +293,6 @@ public:
                                 par->next->prev = NULL;
                                 freq_head = par->next;
                                 free(par);
-
-
                             }
                             else
                             {
@@ -304,12 +304,14 @@ public:
                             tmp->head->prev = page;
                             page->next = tmp->head;
                             tmp->head = page;
+
                             page->prev = NULL;
                             page->parent = tmp;
                             tmp->head = page;
                         }
                         else 
                         {
+                            //Remove from par freq node
                             if(par->head == page)//if the head node
                             {
                                 par->head = page->next;
@@ -325,8 +327,7 @@ public:
                                 page->prev->next = page->next;
                                 page->next->prev = page->prev;
                             }
-                            // cout<<"Middle";
-                            // show();
+                            
                             //add to freq + 1 ie par->next
                             freq_node *tmp = par->next;
 
@@ -339,11 +340,10 @@ public:
                             tmp->head = page;
                         }
 
-
                     }
-//====================================================================================================
-// NO FREQ + 1 > REMOVE CREATE ADD 1ST PAGE
-//====================================================================================================
+                    //====================================================================================================
+                    // NO FREQ + 1 > REMOVE CREATE ADD 1ST PAGE
+                    //====================================================================================================
 
                     else 
                     {

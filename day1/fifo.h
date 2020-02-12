@@ -6,22 +6,22 @@ using namespace std;
 #ifndef FIFO_H
 #define FIFO_H
 
-struct node
+struct fifo_node
 {
     int data;
-    node *next, *prev;
+    fifo_node *next, *prev;
 };
 
 class fifo
 {
 private:
-    node *head,*tail;
+    fifo_node *head,*tail;
     int tot_frames, curr_frames;
     
     
 public:
     int page_faults;
-	unordered_map<int, node*> nodelist;
+	unordered_map<int, fifo_node*> nodelist;
 
     fifo(int tot)
     {
@@ -33,9 +33,10 @@ public:
     void FIFO(int x)
     {
 		
-    	if(check_key(x) != 1)
+    	if(check_key(x) != 1)	//if not present
     	{
             page_faults++;
+            // cout<<x<<endl;
     		if(curr_frames == tot_frames)
     		{
     			remove_page();
@@ -50,7 +51,7 @@ public:
 
     void print_list()
     {
-    	node *tmp = head;
+    	fifo_node *tmp = head;
     	while(tmp != NULL)
     	{
     		cout<<tmp->data<<" ";
@@ -60,13 +61,13 @@ public:
     }
     void add_node(int x)
     {
-        node *tmp = new node;
+        fifo_node *tmp = new fifo_node;
         tmp->data = x;
         tmp->next = NULL;
 
         nodelist[x] = tmp; //add to the hash map for direct acess for fifo
         curr_frames++;
-        page_faults++;
+        // page_faults++;
         // cout<<page_faults<<endl;
 
         if(head == NULL)
@@ -94,7 +95,7 @@ public:
 	  
 	    return 1; 
 	} 
-	node *get_node(int x)
+	fifo_node *get_node(int x)
 	{
 		if(check_key(x)==1)
 			return nodelist.at(x);

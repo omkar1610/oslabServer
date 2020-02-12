@@ -77,7 +77,7 @@ public:
         nodelist[x] = tmp; //add to the hash map for direct acess for lru
         curr_frames++;
         page_faults++;
-        cout<<page_faults<<endl;
+        // cout<<page_faults<<endl;
 
         if(head == NULL)
             head = tail = tmp;
