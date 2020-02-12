@@ -148,8 +148,7 @@ int main()
     {
     	int x;cin>>x;
     	a.LRU(x);
-
-    a.print_list();
+    	a.print_list();
     }
 
     return 0;
