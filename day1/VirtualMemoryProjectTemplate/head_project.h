@@ -2,6 +2,7 @@
 using namespace std;
 
 #define TLB_SIZE 16
+#define PAGE_TABLE_SIZE 28
 #define PAGES 256
 #define PAGE_MASK 255
 
@@ -24,5 +25,7 @@ class project
 private:
 
 public:
-	
+	int LA_Mask(int la)
+	{}
+
 };
