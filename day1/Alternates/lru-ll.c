@@ -1,20 +1,35 @@
 #include "lru-ll.h"
 
 
-void lru(LL *ll, int page)
-{
-	int loc = search(&ll, page);
-	if(loc == 1)
-		move_last(&ll, loc);
-	else
-		insert(&ll, page);
-}
 
 int main()
 {
-	LL ll;
-	int tot_ele = 5;
+	FILE *fp = fopen("input", "r");
+    int x, p,max_frames;
+
+
+	fscanf(fp, "%d", &x);
+	fscanf(fp, "%d", &max_frames);
 	
-	init(&ll, tot_ele);
+	LL ll;
+	init(&ll, max_frames);
+	//For each page
+	int page_fault = 0;
+	while(x--)
+    {
+    	fscanf(fp, "%d", &p);
+    	
+    	//LRU
+		int loc = search(&ll, p);
+		if(loc == 1)
+			move_last(&ll, loc);
+		else
+			page_fault++, insert(&ll, p);
+
+		// showComplete(&ll);
+	}
+
+	fclose(fp);
+	printf("PF %d\n", page_fault);
 	
 }

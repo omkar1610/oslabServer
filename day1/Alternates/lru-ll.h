@@ -12,11 +12,11 @@
 #define getnext(x) ll->elements[(x)].next
 #define getprev(x) ll->elements[(x)].prev
 
-#define DATA int
+// #define DATA int
 
 typedef struct
 {
-	DATA data;
+	int data;
 	int next, prev;
 }NODE;
 
@@ -26,6 +26,7 @@ typedef struct
 	int head, tail, free;
 	NODE *elements;
 }LL;
+
 void init(LL *ll, int tot_ele)
 {
 	TOT_ELE = tot_ele;	NUM_ELE = 0;
@@ -52,7 +53,7 @@ void showComplete(LL *ll)
 
 	printf("\n");
 }
-int search(LL *ll, DATA key) //retuns loc or -1
+int search(LL *ll, int key) //retuns loc or -1
 {
 	int head = HEAD;
 	int num_ele = NUM_ELE;
@@ -75,7 +76,7 @@ void remove_lru(LL *ll)
 	NUM_ELE --;
 }
 
-void insert(LL *ll, DATA x)
+void insert(LL *ll, int x)
 {
 	if( NUM_ELE == TOT_ELE)
 		remove_lru(ll);
