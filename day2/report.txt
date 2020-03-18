@@ -1,0 +1,111 @@
+1.
+		/proc/cpuinfo
+	a.	CPU    The logical CPU number of a CPU as used by the Linux kernel.
+
+	    CORE   The logical core number.  A core can contain several CPUs.
+
+	    Physical cores are just physical cores within the CPU. Logical cores are the abilities of a single core to do 2 or more things simultaneously. 
+
+	    I got 8 entries for my system in /proc/cpuinfo. The following are output from that output.
+	       	physical id     : 0
+			siblings        : 8
+			core id         : 0
+			cpu cores       : 4
+
+		Siblings are 8 means I have 8 CPUS(threads), cpu cores are 4 means I have 4 cores. Hence 2 threads per core.
+		Physical id is 0 for all, hence I have one processor chip.
+
+	b.	My machine has 4 cores.
+	c.	My machine has 1 processor chip and 8 Processors(threads).
+	d.	CPU Freq:		1000.029 MHz
+		CPU max Freq:	4100.0000 MHz
+		CPU min Freq:	800.0000 MHz
+		
+		/proc/meminfo
+	e.	Total Physical Memory =     16239532 kB
+	f.	Free Memory = 	13257448 kB
+		
+		/proc/stat
+	g.	Total number of forks = 	3512
+	h.	Total context switches = 	3928769
+
+
+
+2.
+	a.	ps -a | grep cpu-print
+	b.	pstree -s -p  3483
+	c.	'&' at the end will run the command in the back ground so that we can keep using		the shell without waiting for the command to finish.
+		Shell redirection is a powerful way to change from where commands read input and to where commands send output.
+		The output redirection can be either into a file using a file output redirect meta-character ‘>’, or into the input of another command by separating the commands using a pipe meta-character ‘|’.
+		This command is redirecting the output of a command away from the screen.
+
+		To get the details of the file descriptors I used this.
+		ls -l ./fd
+		And the output is as follows,
+			total 0
+			lrwx------ 1 omkar omkar 64 Mar 18 09:42 0 -> /dev/pts/1
+			l-wx------ 1 omkar omkar 64 Mar 18 09:42 1 -> /tmp/tmp.txt
+			lrwx------ 1 omkar omkar 64 Mar 18 09:42 2 -> /dev/pts/
+
+		which means the output of the processe is not stdout and its the tmp.txt file .
+
+
+
+
+3.
+	RSS - how much memory this process currently has in main memory (RAM). 
+		( Resident Set Size: number of pages the process has in real memory.  This is just the pages which count toward text, data, or stack space.  This does not include pages which have not been demand-loaded in, or which are swapped out.)
+
+	VSZ vsize - how much virtual memory the process has in total. This includes all types of memory, both in RAM and swapped out.
+
+
+	VmRSS: Resident set size.  Note that the value here is the sum of RssAnon, RssFile, and RssShmem.
+
+		RssAnon: Size of resident anonymous memory.
+		RssFile: Size of resident file mappings.
+		RssShmem: Size of resident shared memory (includes System V shared memory, mappings from tmpfs(5), and shared anonymous mappings).
+
+
+	Created the Processes and then got the PIDs of both of them.
+
+	mem1 : 2681 and mem2 : 2683 (in my case).
+
+	vsize = 			8288	8292	(Kb)
+	Resident Memory = 	708		3348	(Kb)
+	Shared Memory = 	644		1496	(Kb)
+	RSSAnony = 			64		1852	(Kb)
+
+	memory1 program is just defineing the array and not accessign it, so the memory is not allocated for the array in the physical memory.
+	But the 2nd program is accessing the elements of the array and hence the memory is getting allocated for the array and that's why the 2nd program is taking more memory compared to the 1st one.
+
+
+4.
+
+	disk.c is reading random files and doing nothing with the data
+
+	disk1.c is reading the same file from the disk indefinitely
+
+	In the former case there will be a page fault and disk IO for the code
+	For the 2nd case, there will be a disk IO only the initial time and after that the file will be in the memory thereafter.
+
+	Former case may not result in page fault and disk IO evrytime and because when the blockes will be read from the disk the spatial locality will be useful sometimes.
+
+	since the 2nd one is not even reading any other file it wont have any more disk IO whereas the 1st one will keep having more disk IO in each iteration.
+
+	using command : iostat -x -d 2
+	For the first code disk utilization was 20%initially and then it became less, For the second program it was constantly between 20%-40%.
+
+5.
+	commands used : TOP and iostat.
+	For all the 3 processes I got CPU Util at 100% in TOP.
+	Since all IO is also CPU controlled, this results in CPU running at 100%.
+
+	a. cpu.c is jut doing arithmatic operations, no other resource. Hece cpu will be the bttleneck for this.
+
+	b. disk.c is reading random files and closing them.
+	c. disk1.c is reading a particular file and closing that.
+
+	disk.c need the cpu to generate the random number where as disk1.c doesn't need that.
+	Other than this both of them majorly do file opening and closing continuously. Hence disk utilization will be more and the code will run as fast as the disk can be read.
+
+	Hence for the first one CPU will be the bottleneck and the other two DISK will be the bottleneck.

@@ -26,16 +26,16 @@ int main(int argc, char *argv[])
 
       fp = fopen(dest_file_name, "rb");
       if (fp == NULL) {
-	perror("Can't open dest file");
-	exit(1);
+      	perror("Can't open dest file");
+      	exit(1);
       }
       
       bzero(buf,BLOCK_SIZE);
       while  ( (n = (int)fread( buf, 1, BLOCK_SIZE, fp )) > 0)
-	{
-	  //do nothing with the read data;
-	  bzero(buf,BLOCK_SIZE);
-	}
+    	{
+    	  //do nothing with the read data;
+    	  bzero(buf,BLOCK_SIZE);
+    	}
  
        fclose(fp);
     }
