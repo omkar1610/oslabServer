@@ -20,9 +20,9 @@ int main(int argc , char *argv[] )
         printf("number entered (%d) <= 0\n", n); 
         exit(0); 
     } 
-  
+
     pid_t pid=fork(); 
-  
+    
     if ( pid<0 ) 
     { 
         printf("fork failed\n"); 
