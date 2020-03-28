@@ -4,49 +4,79 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 
-int
-main(int argc, char *argv[])
+#define READ 0
+#define WRITE 1
+
+int main(int argc, char *argv[])
 {
    int pipefd[2], pipe_rev[2];
    pid_t cpid;
-   char buf;
+
    int BUFFER = strlen(argv[1]) + 1;
+  char msg[BUFFER];
+   
+   
 
-   char wmsg[] = argv[1];
-   printf("%s\n", wmsg);
+   if (argc != 2) {
+       fprintf(stderr, "Usage: %s <string> (String within quotes if white char is there)\n", argv[0]);
+       exit(EXIT_FAILURE);
+   }
 
-   // if (argc != 2) {
-   //     fprintf(stderr, "Usage: %s <string>\n", argv[0]);
-   //     exit(EXIT_FAILURE);
-   // }
+   if (pipe(pipefd) == -1) {
+       perror("pipe1");
+       exit(EXIT_FAILURE);
+   }
+   if (pipe(pipe_rev) == -1) {
+       perror("pipe2");
+       exit(EXIT_FAILURE);
+   }
 
-   // if (pipe(pipefd) == -1 && pipe(pipe_rev) == -1) {
-   //     perror("pipe");
-   //     exit(EXIT_FAILURE);
-   // }
+   cpid = fork();
+   if (cpid == -1) {
+       perror("fork");
+       exit(EXIT_FAILURE);
+   }
 
-   // cpid = fork();
-   // if (cpid == -1) {
-   //     perror("fork");
-   //     exit(EXIT_FAILURE);
-   // }
+   if (cpid == 0) 
+   {
+      close(pipefd[WRITE]); 
+      // msg = malloc(BUFFER);
+      read(pipefd[READ], msg, BUFFER);
+      close(pipefd[READ]);
 
-   // if (cpid == 0) {    /* Child reads from pipe */
-   //     close(pipefd[1]);          /* Close unused write end */
+      // printf("CHILD : %s\n", msg);
+      for (int i = 0; i < BUFFER; ++i)
+        if(islower(msg[i]))
+          msg[i] = toupper(msg[i]);
+        else if(isupper(msg[i]))
+          msg[i] = tolower(msg[i]);
 
-   //     while (read(pipefd[0], &buf, 1) > 0)
-   //         write(STDOUT_FILENO, &buf, 1);
+      // printf("CHILD NEW : %s\n", msg);
 
-   //     write(STDOUT_FILENO, "\n", 1);
-   //     close(pipefd[0]);
-   //     exit(EXIT_SUCCESS);
+      close(pipe_rev[READ]);
+      write(pipe_rev[WRITE], msg, BUFFER);
+      close(pipe_rev[WRITE]);
 
-   // } else {            /* Parent writes argv[1] to pipe */
-   //     close(pipefd[0]);          /* Close unused read end */
-   //     write(pipefd[1], argv[1], BUFFER);
-   //     close(pipefd[1]);          /* Reader will see EOF */
-   //     wait(NULL);                /* Wait for child */
-   //     exit(EXIT_SUCCESS);
-   // }
+      exit(0);
+
+   } 
+   else 
+   {
+      close(pipefd[READ]);          /* Close unused read end */
+      write(pipefd[WRITE], argv[1], BUFFER);
+      close(pipefd[WRITE]);          /* Reader will see EOF */
+      printf("Parent sent msg : %s\n", argv[1]);
+      
+      wait(NULL);                /* Wait for child */
+
+      close(pipe_rev[WRITE]);
+      read(pipe_rev[READ], msg, BUFFER);
+      close(pipe_rev[READ]);
+
+      printf("Parent received msg : %s\n", msg);
+
+      exit(0);
+   }
 }
