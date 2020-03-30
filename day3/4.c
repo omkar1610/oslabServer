@@ -20,12 +20,12 @@ int main(int argc, char *argv[])
    
 
    if (argc != 3) {
-       fprintf(stderr, "Usage: %s <string> (String within quotes if white char is there)\n", argv[0]);
+       fprintf(stderr, "Usage: %s <input> <output>\n", argv[0]);
        exit(EXIT_FAILURE);
    }
 
    if (pipe(pipefd) == -1) {
-       perror("pipe1");
+       perror("pipe");
        exit(EXIT_FAILURE);
    }
    cpid = fork();
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
        exit(EXIT_FAILURE);
    }
 
-   if (cpid == 0) 
+   if (cpid == 0) // Child
    {
       FILE *f = fopen(argv[2], "wb");
       close(pipefd[WRITE]); 
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
       exit(0);
 
    } 
-   else 
+   else //parent
    {
       FILE *f = fopen(argv[1], "rb");
       fseek(f, 0, SEEK_END);
@@ -63,8 +63,6 @@ int main(int argc, char *argv[])
       fclose(f);
 
       data[fsize] = 0;
-      // printf("%s\n", data);
-
 
       close(pipefd[READ]);          /* Close unused read end */
       write(pipefd[WRITE], data, fsize);

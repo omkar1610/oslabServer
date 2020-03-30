@@ -42,7 +42,6 @@ int main(int argc, char *argv[])
    if (cpid == 0) 
    {
       close(pipefd[WRITE]); 
-      // msg = malloc(BUFFER);
       read(pipefd[READ], msg, BUFFER);
       close(pipefd[READ]);
 
@@ -66,7 +65,7 @@ int main(int argc, char *argv[])
    {
       close(pipefd[READ]);          /* Close unused read end */
       write(pipefd[WRITE], argv[1], BUFFER);
-      close(pipefd[WRITE]);          /* Reader will see EOF */
+      close(pipefd[WRITE]);
       printf("Parent sent msg : %s\n", argv[1]);
       
       wait(NULL);                /* Wait for child */

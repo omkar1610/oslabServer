@@ -43,29 +43,50 @@ int main(int argc, char const *argv[])
 	int shm_fd;
 	void *ptr;
 
-
 	shm_fd = shm_open(name, O_CREAT | O_RDWR, 0666); // returns -1 on failure
-	ftruncate(shm_fd, SIZE);//-1 on error
+	if(shm_fd == -1)
+	{
+		perror("shm_open");
+		exit(EXIT_FAILURE);
+	}
 
+	if(ftruncate(shm_fd, SIZE) == -1)//-1 on error
+	{
+		perror("ftruncate");
+		exit(EXIT_FAILURE);
+	}
 
 	ptr = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd, 0); //MAP_FAILED returned on error
+	if( ptr == (void *) -1)
+	{
+		perror("mmap");
+		exit(EXIT_FAILURE);
+	}
+
 	shared_data *tmp = (shared_data *)ptr;
-	tmp->sequence_size = n;
-	
+	tmp->sequence_size = n;	
 
 	pid_t pid=fork(); 
 	  
 	if ( pid<0 ) 
 	{ 
-		printf("fork failed\n"); 
-		exit(0); 
+		perror("fork");
+		exit(EXIT_FAILURE);
 	} 
 	else if ( pid==0 ) 
 	{ 
-
-		const char *msg1 = "Hello", *msg2 = "World";
 		shm_fd = shm_open(name, O_RDWR, 0666);
+		if(shm_fd == -1)
+		{
+			perror("shm_open");
+			exit(EXIT_FAILURE);
+		}
 		ptr = mmap(0, SIZE, PROT_WRITE, MAP_SHARED, shm_fd, 0); //MAP_FAILED returned on error
+		if( ptr == (void *) -1)
+		{
+			perror("mmap");
+			exit(EXIT_FAILURE);
+		}
 		shared_data *tmp = (shared_data *)ptr;
 
 		printf("Child Writing\n");
