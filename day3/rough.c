@@ -1,62 +1,46 @@
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <ctype.h>
+#include <stdio.h> 
+#include <unistd.h> 
+#include <sys/wait.h> 
+#include <sys/types.h> 
+#include <string.h> 
+#include <stdlib.h> 
+#include <fcntl.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
 
-#define READ 0
-#define WRITE 1
-
-int main(int argc, char *argv[])
+void details(int shmid)
 {
-   int pipefd[2], pipe_rev[2];
-   pid_t cpid;
+  if(shmat(shmid,(void*)0,0) == (void *) -1)
+  {
+    perror("shmat(no such id)");
+    exit(EXIT_FAILURE);
+  } 
+  
+  struct shmid_ds buf;
+  if(shmctl(shmid, IPC_STAT, &buf) == -1)
+  {
+    perror("shmctl");
+    exit(EXIT_FAILURE);
+  }
 
-   int BUFFER = strlen(argv[1]) + 1;
+  printf("Seg ID = %d\n", shmid);
+  printf("Key(in Hex) = %04x\n", buf.shm_perm.__key);
+  printf("Mode = %u\n", buf.shm_perm.mode);
+  printf("Owner UID = %d\n", buf.shm_perm.uid);
+  printf("Size = %lu\n", buf.shm_segsz);
+  printf("No of attaches(including this process) = %lu\n", buf.shm_nattch);
 
-   char wmsg[(BUFFER)];
-   
+}
 
-   if (argc != 2) {
-       fprintf(stderr, "Usage: %s <string> (String within quotes if white char is there)\n", argv[0]);
+int main(int argc, char const *argv[])
+{
+  if (argc != 2) {
+       fprintf(stderr, "Usage: %s <shmid>\n", argv[0]);
        exit(EXIT_FAILURE);
-   }
+  }
+  details(atoi(argv[1]));
 
-   if (pipe(pipefd) == -1 && pipe(pipe_rev) == -1) {
-       perror("pipe");
-       exit(EXIT_FAILURE);
-   }
-
-   cpid = fork();
-   if (cpid == -1) {
-       perror("fork");
-       exit(EXIT_FAILURE);
-   }
-
-   if (cpid > 0) 
-   {
-    wait(NULL);                /* Wait for child */
-
-      close(pipefd[WRITE]); 
-      // wmsg = malloc(BUFFER);
-      read(pipefd[READ], wmsg, BUFFER);
-      close(pipefd[READ]);
-
-      printf("PAR : %s\n", wmsg);
-      exit(0);
-
-   } 
-   else 
-   {
-      close(pipefd[READ]);          /* Close unused read end */
-      char msg[] = "Hi There";
-      char *ptr = msg;
-      write(pipefd[WRITE], ptr, BUFFER);
-      close(pipefd[WRITE]);          /* Reader will see EOF */
-      
-
-      exit(0);
-   }
+  return 0;
 }
