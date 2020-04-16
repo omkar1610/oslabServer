@@ -1,30 +1,31 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <limits.h>
-
-
-  
-
+#include "shell.h"
 
 int main(int argc, char const *argv[])
 {
-	char buf[PATH_MAX] = "";
-
-	if(getcwd(buf, PATH_MAX)==NULL)
-		perror("getcwd error");
-
+	FILE *file = fopen(".myshell-history", "a+");
+	fseek(file, 0, SEEK_END);// a+ starts at begining
+	clrscr();
 	while(1)
 	{
-		printf("%s>", buf);
-		// fflush(stdout);
+		prompt();
+		
+		//Input Command by user
 		char *input;
 		scanf("%m[^\n]", &input);
 		getchar();
-		printf("Entered %s\n", input);
+		// printf("Entered %s-\n", input);
 
+		// fprintf(file, "%s\n", input);
+		if(input == NULL)
+			continue;
 
+		int count = char_count(input, ' ');
+		// if(0 < count)
+			parse_input(input, count, file);
+		// else
+			// run_direct_command(input, file);
 	}
+	fclose(file);
 
 	return 0;
 }
