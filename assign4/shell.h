@@ -3,7 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-
+#include <ctype.h>
 // #include <curses.h>
 #include <dirent.h>
 #include <time.h>
@@ -15,6 +15,10 @@
 
 #include <pwd.h>
 #include <grp.h>
+
+#define SAVE_HISTORY fprintf(file, "%s\n", input1)	//Saves command history in a file
+
+#define clrscr printf("\033[H\033[J")  // \033 = ESC,  [H = move to top left, [J = clear everything to the end starting from the current position
 
 
 
@@ -28,7 +32,7 @@ int char_count(const char *input, char delim)// Counts no of spaces to get argum
 
 }
 
-void prompt()
+void prompt()	//Shows the prompt of the shell
 {
 	char path[PATH_MAX] = "";
 	if(getcwd(path, PATH_MAX)==NULL)
@@ -39,13 +43,8 @@ void prompt()
 	fflush(stdout);
 }
 
-void clrscr()
-{
-	// \033 = ESC,  [H = move to top left, [J = clear everything to the end starting from the current position
-	printf("\033[H\033[J");
-}
 
-void show_help()
+void show_help() //Shows list of commands available
 {
 	printf("Available Commands\n");
 	printf("1.clear:\tclear the screen\n");
@@ -55,12 +54,12 @@ void show_help()
 	printf("5.mkdir <dir1> <dir2> ...:\t\tcreates a directory(ies)\n");
 	printf("6.rmdir <dir1> <dir2> ...:\t\tremoves the directory(ies)\n");
 	printf("7.ls <dir1> <dir2> ...(optional -l option):\t\tlists files in current directory\n");
-	printf("9.history:\tdisplays the last commands the user ran, with an offset next to each command.\n");
+	printf("9.history <offset>:\tdisplays the last <offset> number of commands the user ran.\n");
 	printf("10.exit:\texits the program\n");
 }
   
 
-void cd(char *new_path)
+void cd(char *new_path) //change directory to newpath
 {
 	if(chdir(new_path) != 0)
 	{
@@ -70,7 +69,7 @@ void cd(char *new_path)
 
 }
 
-void makedir(const char *new_path)
+void makedir(const char *new_path) //make new directory
 {
 	if(mkdir(new_path, 0777) != 0)
 	{
@@ -79,7 +78,7 @@ void makedir(const char *new_path)
 	}
 }
 
-void removedir(const char *new_path)
+void removedir(const char *new_path) //Removes the directory
 {
 	if(rmdir(new_path) != 0)
 	{
@@ -88,7 +87,7 @@ void removedir(const char *new_path)
 	}
 }
 
-void file_name_print(struct dirent *de)
+void file_name_print(struct dirent *de) //Show file names with different color for different type of file
 {
 	unsigned char type = de->d_type;
 
@@ -103,7 +102,7 @@ void file_name_print(struct dirent *de)
 	printf("\033[0m");//Change color to default	
 }
 
-void ls(const char *new_path)
+void ls(const char *new_path) //normal ls
 {
 	struct dirent *de; 
     DIR *dr = opendir(new_path); 
@@ -124,7 +123,7 @@ void ls(const char *new_path)
     closedir(dr);  
 }
 
-void show_mode(mode_t mode)
+void show_mode(mode_t mode) //ls -l option, print first 10bits of permission bits
 {
     printf( (S_ISDIR(mode)) ? "d" : "-");
     printf( (mode & S_IRUSR) ? "r" : "-");
@@ -138,7 +137,7 @@ void show_mode(mode_t mode)
     printf( (mode & S_IXOTH) ? "x" : "-");
 }
 
-void long_print_file(char *new_path, const char *file)
+void long_print_file(char *new_path, const char *file) //ls -l option print the file details
 {
 	char *path = malloc(1 + strlen(new_path) + strlen(file));
 	int i;
@@ -179,7 +178,7 @@ void long_print_file(char *new_path, const char *file)
 	// printf("\n");
 }
 
-void ls_l(char *new_path)
+void ls_l(char *new_path) // ls -l option
 {
 	struct dirent *de; 
     DIR *dr = opendir(new_path); 
@@ -201,135 +200,127 @@ void ls_l(char *new_path)
     closedir(dr);  
 }
 
-void run_direct_command(const char *input1, FILE *file) //This will take care of clear, env, pwd, history, exit, ls, cd, help
+void show_env_all(const char *envp[]) //shows all the env variables
 {
-	char *input = malloc(strlen(input1));
-	strcpy(input, input1);
+	for (int i = 0; envp[i] != NULL; i++)
+			printf("\n%s", envp[i]);
+}
 
-	char *cmd = strtok(input, " ");
-
-	if(strcmp(cmd, "clear") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-		
-		clrscr(); 
-	}
-	else if(strcmp(cmd, "env") == 0)
-	{
-
-		fprintf(file, "%s\n", input1);
-	}
-	else if(strcmp(cmd, "pwd") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-		char path[PATH_MAX] = "";
+void show_pwd() //shows pwd
+{
+	char path[PATH_MAX] = "";
 		if(getcwd(path, PATH_MAX)==NULL)
 			perror("getcwd error");
 		
 		printf("%s\n", path);
-	}
-	else if(strcmp(cmd, "history") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+}
 
-		rewind(file);
-		char c = fgetc(file); 
-	    while (c != EOF) 
-	    {
-	        printf ("%c", c); 
-	        c = fgetc(file); 
-	    }
-	    printf("\n");
-		fseek(file, 0, SEEK_END); 
-	}
-	else if(strcmp(cmd, "exit") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-		fclose(file);
-		exit(0);
-	}
-	else if(strcmp(cmd, "ls") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-	}
-	else if(strcmp(cmd, "cd") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-	}
-	else if(strcmp(cmd, "help") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-		show_help();
-	}
-	else 
-	{
-		printf("Invalid Command. Type help for details\n");
+int count_line(FILE *file)
+{
+	int line = 0;
+	rewind(file);
+	char chr = getc(file);
+    while (chr != EOF)
+    {
+        if (chr == '\n')
+        	line++;
+        chr = getc(file);
+    }
+    return line;
+}
+
+int is_digit(char *offset)
+{
+	for (int i = 0; i < strlen(offset); ++i)
+		if(isdigit(offset[i]) == 0)
+			return 0;
+	return 1;
+}
+
+void show_last_n_lines(FILE *file, int offset)
+{
+	int line_no = count_line(file);
+
+	rewind(file);
+
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t nread;
+
+	int i = line_no - offset;
+	while (i-- && (nread = getline(&line, &len, file)) != -1);
+	while ((nread = getline(&line, &len, file)) != -1) {
+		printf("%s", line);
 	}
 }
 
+void show_history(FILE *file, int offset) //Shows the history , last line is the latest
+{
+	int line = count_line(file);
+	if(line < offset)
+	{
+		printf("History has only %d commands\n", line);
+		offset = line;
+	}
+	show_last_n_lines(file, offset);
+	fseek(file, 0, SEEK_END); 
+}
 
-void parse_input(const char *input1, const int count, FILE *file)
+void parse_input(const char *input1, const int count, FILE *file, char const *envp[])
 {
 	char *input = malloc(strlen(input1));
 	strcpy(input, input1);
 
 	char *cmd = strtok(input, " ");
-	if(strcmp(cmd, "clear") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	
+	if(strcmp(cmd, "clear") == 0){
+		SAVE_HISTORY;
+		clrscr; 
+	}
+	else if(strcmp(cmd, "env") == 0){
+		SAVE_HISTORY;
+		// if(count == 0)
+			show_env_all(envp);
+		printf("\n");
+	}
+	else if(strcmp(cmd, "pwd") == 0){
+		SAVE_HISTORY;
+		show_pwd();
+	}
+	else if(strcmp(cmd, "history") == 0){
+		// SAVE_HISTORY;
 		
-		clrscr(); 
+		if(count == 1){
+			char *args = strtok(NULL, " ");
+			if(args != NULL){
+				SAVE_HISTORY;
+				int offset = atoi(args);
+				show_history(file, offset);
+			}
+			else
+				printf("Usage : history <offset>\n");
+		}
+		else
+			printf("Usage : history <offset>\n");		
 	}
-	else if(strcmp(cmd, "env") == 0)
-	{
-
-		fprintf(file, "%s\n", input1);
-	}
-	else if(strcmp(cmd, "pwd") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-		char path[PATH_MAX] = "";
-		if(getcwd(path, PATH_MAX)==NULL)
-			perror("getcwd error");
-		
-		printf("%s\n", path);
-	}
-	else if(strcmp(cmd, "history") == 0)
-	{
-		fprintf(file, "%s\n", input1);
-
-		rewind(file);
-		char c = fgetc(file); 
-	    while (c != EOF) 
-	    {
-	        printf ("%c", c); 
-	        c = fgetc(file); 
-	    }
-	    printf("\n");
-		fseek(file, 0, SEEK_END); 
-	}
-	else if(strcmp(cmd, "exit") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	else if(strcmp(cmd, "exit") == 0){
+		SAVE_HISTORY;
 		fclose(file);
 		exit(0);
 	}
-	else if(strcmp(cmd, "cd") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	else if(strcmp(cmd, "cd") == 0){
+		SAVE_HISTORY;
 		if(count>1)
 			printf("Too many arguments for cd. Usage: cd <directory>\n");
 		else if(count == 0)
 			cd("/home"); // go to home on only cd
-		else
-		{
+		else {
 			char *args = strtok(NULL, " ");
 			cd(args);
 		}
 	}
-	else if(strcmp(cmd, "mkdir") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	else if(strcmp(cmd, "mkdir") == 0){
+		SAVE_HISTORY;
 		while(1)
 		{
 			char *args = strtok(NULL, " ");
@@ -339,9 +330,8 @@ void parse_input(const char *input1, const int count, FILE *file)
 		}
 
 	}
-	else if(strcmp(cmd, "rmdir") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	else if(strcmp(cmd, "rmdir") == 0){
+		SAVE_HISTORY;
 		while(1)
 		{
 			char *args = strtok(NULL, " ");
@@ -350,9 +340,8 @@ void parse_input(const char *input1, const int count, FILE *file)
 			removedir(args);
 		}
 	}
-	else if(strcmp(cmd, "ls") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	else if(strcmp(cmd, "ls") == 0){
+		SAVE_HISTORY;
 		if(strstr(input1, "-l") == NULL)// NO -l option
 		{
 			if(count == 0) // only ls is same is ls .
@@ -394,13 +383,147 @@ void parse_input(const char *input1, const int count, FILE *file)
 			}
 		}
 	}
-	else if(strcmp(cmd, "help") == 0)
-	{
-		fprintf(file, "%s\n", input1);
+	else if(strcmp(cmd, "help") == 0){
 		show_help();
 	}
-	else
+	else{
+		printf("Invalid Command. Type help for details\n");
+	}
+}
+
+
+int str_to_argv(const char *s, int length, char argv[][length+1])
+{
+	int argc = 0;
+	int curr_arg_pos = 0;
+	for (int i = 0; i < length; ++i)
 	{
+		if(s[i] == ' ')
+		{
+			if(curr_arg_pos != 0)
+			{
+				argv[argc][curr_arg_pos] = '\0';
+				argc++;
+				curr_arg_pos = 0;
+			}
+		}
+		else if(s[i] == '\\')
+		{
+			if(i!=length-1)
+				argv[argc][curr_arg_pos++] = s[++i];
+		}
+		else
+		{
+			argv[argc][curr_arg_pos++] = s[i];
+		}		
+	}
+	if(curr_arg_pos!=0)
+	{
+		argv[argc][curr_arg_pos] = '\0';
+		argc++;
+		curr_arg_pos = 0;
+	}
+	return argc;
+}
+
+
+void my_parser(const char *input1, const int count, FILE *file, char const *envp[])
+{
+	int length = strlen(input1);
+	int row = char_count(input1, ' ');
+	char argv[row][length+1];
+
+	int argc = str_to_argv(input1, length, argv);
+
+	if(strcmp(argv[0], "clear") == 0){
+		SAVE_HISTORY;
+		clrscr; 
+	}
+	else if(strcmp(argv[0], "env") == 0){
+		SAVE_HISTORY;
+		// if(count == 0)
+			show_env_all(envp);
+		printf("\n");
+	}
+	else if(strcmp(argv[0], "pwd") == 0){
+		SAVE_HISTORY;
+		show_pwd();
+	}
+	else if(strcmp(argv[0], "history") == 0){
+		if(argc == 2){
+			if(is_digit(argv[1])){
+				SAVE_HISTORY;
+				int offset = atoi(argv[1]);
+				show_history(file, offset);
+			}
+			else
+				printf("history: offset is not a valid number\n");
+		}
+		else
+			printf("Usage : history <offset>\n");		
+	}
+	else if(strcmp(argv[0], "exit") == 0){
+		SAVE_HISTORY;
+		fclose(file);
+		exit(0);
+	}
+	else if(strcmp(argv[0], "cd") == 0){
+		SAVE_HISTORY;
+		if(argc>2)
+			printf("Too many arguments for cd. Usage: cd <directory>\n");
+		else if(argc == 1)
+			cd("/home"); // go to home on only cd
+		else 
+			cd(argv[1]);
+	}
+	else if(strcmp(argv[0], "mkdir") == 0){
+		SAVE_HISTORY;
+		for (int i = 1; i < argc; ++i)
+			makedir(argv[i]);
+
+	}
+	else if(strcmp(argv[0], "rmdir") == 0){
+		SAVE_HISTORY;
+		for (int i = 1; i < argc; ++i)
+			removedir(argv[i]);
+	}
+	else if(strcmp(argv[0], "ls") == 0){
+		SAVE_HISTORY;
+		if(strstr(input1, "-l") == NULL)// NO -l option
+		{
+			if(argc == 1) // only ls is same is ls .
+				ls(".");
+			else
+			{
+				for (int i = 1; i < argc; ++i)
+					if(argv[i][0] != '-')
+					{
+						printf("\n%s:\n", argv[i]);
+						ls(argv[i]);
+					}
+				
+			}
+		}
+		else
+		{
+			if(argc == 2) // only ls is same is ls .
+				ls_l(".");
+			else
+			{
+				for (int i = 1; i < argc; ++i)
+					if(argv[i][0] != '-')
+					{
+						printf("\n%s:\n", argv[i]);
+						ls_l(argv[i]);
+					}
+				
+			}
+		}
+	}
+	else if(strcmp(argv[0], "help") == 0){
+		show_help();
+	}
+	else{
 		printf("Invalid Command. Type help for details\n");
 	}
 }

@@ -1,30 +1,69 @@
-cd
-ls .
-cd ..
-cd ..
-history
-exit
-pwd
-history
-exit
-history
-history
+Cczdfsdfds
+dfdsfndsf
+dsfsflg;fdgfds
+g;lfdsg
+fdsg'fdsgkfds
+gfsdgsfdg
+fdsn
+gsfd
+g
+dsfg
+C
+history 2
+cd /home
+ls
+ls -l
+history 5
+history 6
+history 24
+history 2a
+history 21
+history 20
 exit
 clear
-history
-ls .. .
-ls .
-exit
-help
-help
-history
+history 2
+history 20
+history 100
 clear
-help
-exit
-help
-cd
-cd
-cd
-history
 clear
+ls -l 
+ls -l .
+ls
+cd
+cd /home
+cd home
+cd /home/omkar/Desktop/
+cd Git\ Servers
+cd Git \Servers
+cd Git Servers
+cd Git\ Servers
+cd Git\ Servers/
+cd Git\ Servers/
+cd Git\\ Servers
+exit
+ls
+mkdir t1
+ls
+ls -l
+rmdir t2
+rmdir cshell
+rmdir t1
+exit
+history 2
+history 100
+history a
+history 23
+ls
+mkdir a b c
+ls
+mkdir -l
+ls
+exit
+history 0
+history 1
+history 5
+ls
+clear
+history 5
+history 123
 exit
